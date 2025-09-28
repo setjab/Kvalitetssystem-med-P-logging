@@ -2,42 +2,87 @@
 <html lang="no">
 <head>
   <meta charset="utf-8" />
-  <title>Kvalitetssystem – Pålogget versjon</title>
+  <title>Kvalitetssystem – Ungdom</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; margin:20px; background:#f4f6f9; color:#222; }
-    header {
-  background: linear-gradient(90deg, #14532d, #228B22, #b8860b);
-  color: #fff;
-  padding: 36px 20px;
-  text-align: center;
-  font-size: 34px;
-  font-weight: 900;
-  border-radius: 14px;
-  margin-bottom: 25px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  text-shadow: 0 0 6px rgba(255,255,255,0.6),
-               0 0 12px rgba(0,0,0,0.4);
-}
-header span {
-  display:block;
-  font-size:22px;
-  font-weight:600;
-  margin-top:10px;
-  letter-spacing:1px;
-  text-transform:none;
-  text-shadow: 0 0 4px rgba(255,255,255,0.5);
-}
+    body { margin:0; font-family: Arial, sans-serif; background:#f4f6f9; color:#222; }
 
-    #login { max-width:400px; margin:30px auto; padding:20px; background:#fff; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,.1); }
-    #app { display:none; }
-    label { display:block; margin-top:8px; }
-    input[type="text"], input[type="password"] { width:100%; padding:8px; margin-top:6px; box-sizing:border-box; }
+    /* Påloggingsvindu */
+    #loginScreen {
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      height:100vh;
+      background: linear-gradient(135deg, #14532d, #228B22, #b8860b);
+    }
+    #loginBox {
+      background:#fff;
+      padding:40px;
+      border-radius:12px;
+      box-shadow:0 6px 20px rgba(0,0,0,0.3);
+      text-align:center;
+      width:320px;
+    }
+    #loginBox h2 {
+      margin-bottom:20px;
+      color:#14532d;
+    }
+    #loginBox input {
+      width:90%;
+      padding:10px;
+      margin:8px 0;
+      border:1px solid #ccc;
+      border-radius:6px;
+      font-size:16px;
+    }
+    #loginBox button {
+      margin-top:14px;
+      padding:10px 20px;
+      width:95%;
+      background:#228B22;
+      color:#fff;
+      border:none;
+      border-radius:6px;
+      cursor:pointer;
+      font-size:16px;
+      font-weight:bold;
+    }
+    #loginBox button:hover {
+      background:#14532d;
+    }
+    #errorMsg {
+      color:#e53935;
+      margin-top:10px;
+      font-size:14px;
+    }
+
+    /* App (skjules før innlogging) */
+    #appContainer { display:none; padding:20px; }
+
+    header {
+      background: linear-gradient(90deg, #14532d, #228B22, #b8860b);
+      color: #fff;
+      padding: 36px 20px;
+      text-align: center;
+      font-size: 34px;
+      font-weight: 900;
+      border-radius: 14px;
+      margin-bottom: 25px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    header span {
+      display:block;
+      font-size:22px;
+      font-weight:600;
+      margin-top:10px;
+      text-transform:none;
+    }
+
     .question { background:#fff; padding:12px; margin-bottom:10px; border-radius:6px; box-shadow:0 1px 4px rgba(0,0,0,.08); }
     .answer-btn { margin:6px 6px 6px 0; padding:10px 14px; border:none; border-radius:6px; cursor:pointer; opacity:.9; }
     .answer-btn.selected { outline:3px solid #000; opacity:1; }
@@ -47,201 +92,159 @@ header span {
     .save-btn { padding:10px 14px; background:#0b7; color:#fff; border:none; border-radius:6px; cursor:pointer; margin-top:10px; }
     .export-btn { padding:10px 14px; background:#189; color:#fff; border:none; border-radius:6px; cursor:pointer; margin-top:10px; margin-right:8px; }
     #userList { margin-top:12px; background:#fff; padding:10px; border-radius:6px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
-    .block-summary { margin-top:12px; padding:12px; background:#fff; border-radius:6px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
-    .status-circle { display:inline-block; width:40px; height:40px; border-radius:50%; margin-right:10px; vertical-align:middle; }
-    .green { background:#28a745; }
-    .red { background:#dc3545; }
-    .yellow { background:#ffc107; }
+    .block-summary { margin-top:12px; padding:12px; background:#f8f9ff; border-radius:6px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+    .block-row { display:flex; align-items:center; margin-bottom:12px; }
+    .block-row canvas { width:100px !important; height:100px !important; margin-right:14px; }
     footer { margin-top:18px; font-size:13px; color:#666; text-align:center; }
   </style>
 </head>
 <body>
 
+<!-- Login -->
+<div id="loginScreen">
+  <div id="loginBox">
+    <h2>🔑 Logg inn</h2>
+    <input type="text" id="loginUser" placeholder="Brukernavn" />
+    <input type="password" id="loginPass" placeholder="Passord" />
+    <button onclick="checkLogin()">Logg inn</button>
+    <div id="errorMsg"></div>
+  </div>
+</div>
+
+<!-- App -->
+<div id="appContainer">
 <header>⭐ KVALITETSSYSTEM – UNGDOM ⭐<br>
 <span>✅ Utviklet av Settar Al-Jabri ✅</span></header>
 
+<h2>Registrering</h2>
+<label>Brukernavn / ID
+  <input type="text" id="username" placeholder="Skriv navn eller ID" />
+</label>
 
-<!-- LOGIN -->
-<div id="login">
-  <h3>Logg inn</h3>
-  <label>Brukernavn
-    <input type="text" id="loginUser" placeholder="Brukernavn">
-  </label>
-  <label>Passord
-    <input type="password" id="loginPass" placeholder="Passord">
-  </label>
-  <div style="margin-top:12px;">
-    <button onclick="checkLogin()" style="padding:10px 14px; border-radius:6px; border:none; background:#28a745; color:#fff; cursor:pointer;">Logg inn</button>
-  </div>
-  <p style="margin-top:10px; font-size:13px; color:#555;">
-   
-  </p>
+<div id="questions"></div>
+<button class="save-btn" onclick="saveData()">💾 Lagre svar</button>
+
+<div id="userList"></div>
+<hr/>
+
+<div id="dashboard">
+  <h3>Dashboard – samlet (alle brukere)</h3>
+  <canvas id="resultChart" width="600" height="300"></canvas>
+  <div id="allSummary" class="block-summary"></div>
 </div>
 
-<!-- APP -->
-<div id="app">
-  <h2>Registrering</h2>
-  <label>Brukernavn / ID
-    <input type="text" id="username" placeholder="Skriv navn eller ID" />
+<div style="margin-top:12px;">
+  <button class="export-btn" onclick="exportCSV()">⬇ Last ned CSV</button>
+  <button class="export-btn" onclick="exportPDF()">📄 Last ned PDF</button>
+  <button class="export-btn" onclick="exportJSON()">🗂️ Last ned JSON</button>
+  <label class="export-btn" style="cursor:pointer;">
+    📤 Last opp JSON
+    <input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="importJSON(event)" />
   </label>
+</div>
 
-  <div id="questions"></div>
-  <button class="save-btn" onclick="saveData()">💾 Lagre svar</button>
-
-  <div id="userList"></div>
-  <hr/>
-
-  <div id="dashboard">
-    <h3>Dashboard – samlet (alle brukere)</h3>
-    <canvas id="resultChart" width="600" height="300"></canvas>
-    <div id="allSummary" class="block-summary"></div>
-  </div>
-
-  <div style="margin-top:12px;">
-    <button class="export-btn" onclick="exportCSV()">⬇ Last ned CSV</button>
-    <button class="export-btn" onclick="exportPDF()">📄 Last ned PDF</button>
-  </div>
-
-  <footer>Pålogget versjon – utviklet av Settar Al-Jabri</footer>
+<footer>Utviklet av Settar Al-Jabri</footer>
 </div>
 
 <script>
-/* --- Enkel innlogging --- */
+/* === Login-funksjon === */
 function checkLogin(){
-  const u = document.getElementById('loginUser').value.trim();
-  const p = document.getElementById('loginPass').value.trim();
-  if(u === 'navland' && p === '2025'){
-    document.getElementById('login').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
-    initApp();
+  const u=document.getElementById("loginUser").value;
+  const p=document.getElementById("loginPass").value;
+  if(u==="navland" && p==="2025"){
+    document.getElementById("loginScreen").style.display="none";
+    document.getElementById("appContainer").style.display="block";
   } else {
-    alert('Feil brukernavn eller passord');
+    document.getElementById("errorMsg").innerText="❌ Feil brukernavn eller passord";
   }
 }
 
-/* === Alle spørsmål (36 stk) === */
-const questions = [
-  // Del 1 (8)
-  "Har du blitt tilstrekkelig kjent med personen for å forstå behovet for oppfølging fremover?",
-  "Hvis brukeren har oppgitt hindringer eller behov for hjelp og veiledning, har du hatt en samtale?",
-  "Har samtalen handlet om brukerens jobbmuligheter?",
-  "Hvordan er kvaliteten i oppfølgingsvedtaket?",
-  "— Inneholder begrunnelsen vurdering av brukerens ønsker, ressurser og forutsetninger?",
-  "— Inneholder begrunnelsen vurdering av personens jobbmuligheter (nå eller på sikt)?",
-  "— Inneholder begrunnelsen vurdering av personens muligheter opp mot bransjer og/eller yrker?",
-  "— Inneholder begrunnelsen vurdering av hvilken hjelp og støtte som trengs?",
-  // Del 2 (15)
-  "Er det en tydelig arbeidsretting i samhandlingen med brukeren?",
-  "— Har personen fått veiledning knyttet til jobbmål?",
-  "— Har arbeid og aktivitet vært sentrale tema i dialogen?",
-  "— Har brukeren arbeidsrettede aktiviteter i planen sin?",
-  "— Har det vært tydelige avtalte oppfølgingspunkter?",
-  "Har du vurdert hvilken hjelp og støtte som kan bidra til jobb?",
-  "— Har du vurdert tilrettelegging på arbeidsplassen?",
-  "— Har du vurdert kvalifisering/opplæring?",
-  "— Har du vurdert samarbeid med andre enheter?",
-  "Har det vært samhandling med arbeidsgiver(e)?",
-  "— Er arbeidsgiver en del av oppfølgingen?",
-  "— Har du vurdert lønnstilskudd/mentor?",
-  "Har oppfølgingen blitt evaluert underveis?",
-  "— Har aktivitetene blitt evaluert sammen med brukeren?",
-  "— Har mål/situasjon endret seg og nytt vedtak blitt fattet?",
-  // Del 3 (10)
-  "Har brukermøtene vært planlagte?",
-  "— Er møteagenda delt med brukeren?",
-  "— Brukes aktivitetsplanen i oppfølgingen?",
-  "— Har du vurdert digital oppfølging?",
-  "— Inneholder referater tydelige avtaler?",
-  "Har brukeren fått medvirke i samarbeidet?",
-  "— Blir ønsker og behov ivaretatt?",
-  "— Har brukeren fått informasjon om målet?",
-  "— Er det gjennomført fysiske møter?",
-  "— Har brukeren medvirket i valg av tiltak?",
-  // Del 4 (3)
-  "Har den unge fått informasjon om ungdomsgarantien?",
-  "Har den unge hatt brudd i oppfølgingen?",
-  "Er det jobbet med å gi den unge målrettede aktiviteter?"
-];
+/* === Spørsmål (36 stk) === */
+const questions=[ /* ... samme som du hadde ... */ 
+"Har du blitt tilstrekkelig kjent med personen for å forstå behovet for oppfølging fremover?",
+"Hvis brukeren har oppgitt hindringer eller behov for hjelp og veiledning, har du hatt en samtale?",
+"Har samtalen handlet om brukerens jobbmuligheter?",
+"Hvordan er kvaliteten i oppfølgingsvedtaket?",
+"— Inneholder begrunnelsen vurdering av brukerens ønsker, ressurser og forutsetninger?",
+"— Inneholder begrunnelsen vurdering av personens jobbmuligheter (nå eller på sikt)?",
+"— Inneholder begrunnelsen vurdering av personens muligheter opp mot bransjer og/eller yrker?",
+"— Inneholder begrunnelsen vurdering av hvilken hjelp og støtte som trengs?",
+"Er det en tydelig arbeidsretting i samhandlingen med brukeren?",
+"— Har personen fått veiledning knyttet til jobbmål?",
+"— Har arbeid og aktivitet vært sentrale tema i dialogen?",
+"— Har brukeren arbeidsrettede aktiviteter i planen sin?",
+"— Har det vært tydelige avtalte oppfølgingspunkter?",
+"Har du vurdert hvilken hjelp og støtte som kan bidra til jobb?",
+"— Har du vurdert tilrettelegging på arbeidsplassen?",
+"— Har du vurdert kvalifisering/opplæring?",
+"— Har du vurdert samarbeid med andre enheter?",
+"Har det vært samhandling med arbeidsgiver(e)?",
+"— Er arbeidsgiver en del av oppfølgingen?",
+"— Har du vurdert lønnstilskudd/mentor?",
+"Har oppfølgingen blitt evaluert underveis?",
+"— Har aktivitetene blitt evaluert sammen med brukeren?",
+"— Har mål/situasjon endret seg og nytt vedtak blitt fattet?",
+"Har brukermøtene vært planlagte?",
+"— Er møteagenda delt med brukeren?",
+"— Brukes aktivitetsplanen i oppfølgingen?",
+"— Har du vurdert digital oppfølging?",
+"— Inneholder referater tydelige avtaler?",
+"Har brukeren fått medvirke i samarbeidet?",
+"— Blir ønsker og behov ivaretatt?",
+"— Har brukeren fått informasjon om målet?",
+"— Er det gjennomført fysiske møter?",
+"— Har brukeren medvirket i valg av tiltak?",
+"Har den unge fått informasjon om ungdomsgarantien?",
+"Har den unge hatt brudd i oppfølgingen?",
+"Er det jobbet med å gi den unge målrettede aktiviteter?"];
 
 /* === Blokker === */
-const blocks = {
-  "Bli kjent og forstå behov": Array.from({length:8},(_,i)=>i),
-  "Arbeidsretting og fremdrift": Array.from({length:15},(_,i)=>i+8),
-  "Brukermedvirkning": Array.from({length:10},(_,i)=>i+23),
-  "Ungdomsgaranti (U30)": Array.from({length:3},(_,i)=>i+33)
+const blocks={
+  "Bli kjent og forstå behov":Array.from({length:8},(_,i)=>i),
+  "Arbeidsretting og fremdrift":Array.from({length:15},(_,i)=>i+8),
+  "Brukermedvirkning":Array.from({length:10},(_,i)=>i+23),
+  "Ungdomsgaranti (U30)":Array.from({length:3},(_,i)=>i+33)
 };
 
-let answers = [];
-let allAnswers = [];
-let resultChart = null;
+let answers=[]; let allAnswers=[]; let resultChart=null; let blockCharts={};
 
-function initApp(){ renderQuestions(); renderEmptyDashboard(); }
-
-function renderQuestions(){
-  const div=document.getElementById('questions');
-  div.innerHTML='';
-  questions.forEach((q,i)=>{
-    div.innerHTML+=`
-      <div class="question" id="q${i}">
-        <strong>${i+1}. ${q}</strong><br>
-        <button class="answer-btn answer-ja" onclick="selectAnswer(${i},'Ja',this)">Ja</button>
-        <button class="answer-btn answer-nei" onclick="selectAnswer(${i},'Nei',this)">Nei</button>
-        <button class="answer-btn answer-usikker" onclick="selectAnswer(${i},'Usikker',this)">Usikker</button>
-      </div>`;
-  });
-}
-function selectAnswer(i,val,btn){
-  answers[i]=val;
-  document.querySelectorAll(`#q${i} .answer-btn`).forEach(b=>b.classList.remove('selected'));
-  btn.classList.add('selected');
-}
-function saveData(){
-  const username=document.getElementById('username').value||'Ukjent';
-  const userAnswers=questions.map((q,i)=>({question:q,answer:answers[i]||''}));
-  allAnswers.push({user:username,answers:userAnswers,timestamp:new Date().toISOString()});
-  renderUserList(); renderChartAndBlocks();
-  answers=[]; renderQuestions(); document.getElementById('username').value='';
-}
-function renderUserList(){
-  let html='<strong>Lagrede brukere:</strong><ul>';
-  for(let i=allAnswers.length-1;i>=0;i--){html+=`<li>${allAnswers[i].user}</li>`;}
-  html+='</ul>';
-  document.getElementById('userList').innerHTML=html;
-}
-function renderEmptyDashboard(){
-  const ctx=document.getElementById('resultChart').getContext('2d');
+function renderQuestions(){const div=document.getElementById('questions');div.innerHTML='';
+  questions.forEach((q,i)=>{div.innerHTML+=`<div class="question" id="q${i}"><strong>${i+1}. ${q}</strong><br>
+  <button class="answer-btn answer-ja" onclick="selectAnswer(${i},'Ja',this)">Ja</button>
+  <button class="answer-btn answer-nei" onclick="selectAnswer(${i},'Nei',this)">Nei</button>
+  <button class="answer-btn answer-usikker" onclick="selectAnswer(${i},'Usikker',this)">Usikker</button></div>`;});}
+function selectAnswer(i,val,btn){answers[i]=val;document.querySelectorAll(`#q${i} .answer-btn`).forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');}
+function saveData(){const username=document.getElementById('username').value||'Ukjent';const userAnswers=questions.map((q,i)=>({question:q,answer:answers[i]||''}));
+  allAnswers.push({user:username,answers:userAnswers,timestamp:new Date().toISOString()});renderUserList();renderChartAndBlocks();
+  answers=[];renderQuestions();document.getElementById('username').value='';}
+function renderUserList(){let html='<strong>Lagrede brukere:</strong><ul>';for(let i=allAnswers.length-1;i>=0;i--){html+=`<li>${allAnswers[i].user}</li>`;}html+='</ul>';document.getElementById('userList').innerHTML=html;}
+function renderEmptyDashboard(){const ctx=document.getElementById('resultChart').getContext('2d');
   resultChart=new Chart(ctx,{type:'bar',data:{labels:['Ja','Nei','Usikker'],datasets:[{data:[0,0,0],backgroundColor:['#28a745','#dc3545','#ffc107']}]},options:{responsive:false}});
-  document.getElementById('allSummary').innerHTML='<em>Ingen data</em>';
-}
-function renderChartAndBlocks(){
-  const counts={Ja:0,Nei:0,Usikker:0};
+  document.getElementById('allSummary').innerHTML='<em>Ingen data</em>';}
+function renderChartAndBlocks(){const counts={Ja:0,Nei:0,Usikker:0};
   allAnswers.forEach(u=>u.answers.forEach(a=>{if(a.answer)counts[a.answer]++;}));
   const ctx=document.getElementById('resultChart').getContext('2d');
   if(resultChart) resultChart.destroy();
   resultChart=new Chart(ctx,{type:'bar',data:{labels:['Ja','Nei','Usikker'],datasets:[{data:[counts.Ja,counts.Nei,counts.Usikker],backgroundColor:['#28a745','#dc3545','#ffc107']}]},options:{responsive:false}});
-  let html='<h4>Oppsummering per blokk</h4>';
-  for(const [block,idxs] of Object.entries(blocks)){
-    let ja=0,nei=0,usikker=0;
-    allAnswers.forEach(u=>{idxs.forEach(i=>{if(u.answers[i].answer==='Ja')ja++; if(u.answers[i].answer==='Nei')nei++; if(u.answers[i].answer==='Usikker')usikker++;});});
-    const total=ja+nei+usikker;
-    let statusClass='yellow'; if(ja>nei&&ja>usikker)statusClass='green'; else if(nei>ja&&nei>=usikker)statusClass='red';
-    html+=`<p><span class="status-circle ${statusClass}"></span><b>${block}:</b> Totalt ${total} (Ja:${ja}, Nei:${nei}, Usikker:${usikker})</p>`;
-  }
-  document.getElementById('allSummary').innerHTML=html;
-}
-function exportCSV(){
-  let csv="Bruker,Spørsmål,Svar\n";
-  allAnswers.forEach(u=>u.answers.forEach(a=>{csv+=`${u.user},"${a.question}",${a.answer}\n`;}));
-  const blob=new Blob([csv],{type:"text/csv"}); const link=document.createElement("a");
-  link.href=URL.createObjectURL(blob); link.download="resultater.csv"; link.click();
-}
-async function exportPDF(){
-  const {jsPDF}=window.jspdf; const element=document.getElementById("dashboard");
-  const canvas=await html2canvas(element,{scale:3}); const imgData=canvas.toDataURL("image/png");
-  const pdf=new jsPDF("p","mm","a4"); const marginLeft=20; const pdfWidth=pdf.internal.pageSize.getWidth()-marginLeft;
-  const pdfHeight=(canvas.height*pdfWidth)/canvas.width;
-  pdf.addImage(imgData,"PNG",marginLeft,10,pdfWidth,pdfHeight); pdf.save("resultater.pdf");
-}
+  let html='<h4>Oppsummering per blokk (alle brukere)</h4>';
+  for(const [block,idxs] of Object.entries(blocks)){let ja=0,nei=0,usikker=0;
+    allAnswers.forEach(u=>{idxs.forEach(i=>{if(u.answers[i].answer==='Ja')ja++;if(u.answers[i].answer==='Nei')nei++;if(u.answers[i].answer==='Usikker')usikker++;});});
+    const total=ja+nei+usikker;const canvasId="pie_"+block.replace(/\s+/g,'_');
+    html+=`<div class="block-row"><canvas id="${canvasId}"></canvas><div><b>${block}:</b> Totalt ${total} (Ja:${ja}, Nei:${nei}, Usikker:${usikker})</div></div>`;
+    setTimeout(()=>{const ctx=document.getElementById(canvasId).getContext("2d");if(blockCharts[canvasId]) blockCharts[canvasId].destroy();
+      blockCharts[canvasId]=new Chart(ctx,{type:'doughnut',data:{labels:["Ja","Nei","Usikker"],datasets:[{data:[ja,nei,usikker],backgroundColor:['#4caf50','#e53935','#fbc02d']}]},options:{plugins:{legend:{display:false}},cutout:'50%'}});},50);}
+  document.getElementById('allSummary').innerHTML=html;}
+function exportCSV(){let csv="Bruker,Spørsmål,Svar\n";allAnswers.forEach(u=>u.answers.forEach(a=>{csv+=`${u.user},"${a.question}",${a.answer}\n`;}));
+  const blob=new Blob([csv],{type:"text/csv"});const link=document.createElement("a");link.href=URL.createObjectURL(blob);link.download="resultater.csv";link.click();}
+async function exportPDF(){const {jsPDF}=window.jspdf;const element=document.getElementById("dashboard");const canvas=await html2canvas(element,{scale:3});
+  const imgData=canvas.toDataURL("image/png");const pdf=new jsPDF("p","mm","a4");const marginLeft=20;const pdfWidth=pdf.internal.pageSize.getWidth()-marginLeft;
+  const pdfHeight=(canvas.height*pdfWidth)/canvas.width;pdf.addImage(imgData,"PNG",marginLeft,10,pdfWidth,pdfHeight);pdf.save("resultater.pdf");}
+function exportJSON(){const blob=new Blob([JSON.stringify(allAnswers,null,2)],{type:"application/json"});const link=document.createElement("a");
+  link.href=URL.createObjectURL(blob);link.download="resultater.json";link.click();}
+function importJSON(event){const file=event.target.files[0];if(!file) return;const reader=new FileReader();reader.onload=e=>{try{const data=JSON.parse(e.target.result);
+  if(Array.isArray(data)){allAnswers=data;renderUserList();renderChartAndBlocks();alert("JSON-data lastet inn ✅");}else{alert("Ugyldig JSON-format ❌");}}
+  catch(err){alert("Feil ved lesing av JSON: "+err);}};reader.readAsText(file);}
+renderQuestions();renderEmptyDashboard();
 </script>
 </body>
 </html>
